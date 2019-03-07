@@ -65,7 +65,7 @@ class _MyHomePageState extends State<MyHomePage> {
         },
         itemCount: _tasks.length,
       ),
-      bottomNavigationBar: BottomNavigationBar(
+      bottomNavigationBar: BottomAppBar(
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       floatingActionButton: FloatingActionButton(
