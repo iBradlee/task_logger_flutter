@@ -1,27 +1,35 @@
 import 'package:date_format/date_format.dart';
 
 class Log {
-  int parentTaskId;
-  int id;
+  int _parentTaskId;
+  int _id;
   String content;
   // When displaying time/date, it can be formatted for UI with helper methods in this class
-  String dateTime = DateTime.now().toString();
+  String dateTime;
 
-  Log({this.parentTaskId, this.id, this.content, this.dateTime});
+  Log(this.content, this._parentTaskId) {
+    dateTime = DateTime.now().toString();
+  }
 
-  factory Log.fromMap(Map<String, dynamic> json) => Log(
-    parentTaskId: json["parentTaskId"],
-    id: json["id"],
-    content: json["content"],
-    dateTime: json["dateTime"],
+  Log._(this._parentTaskId, this._id, this.content, this.dateTime);
+
+  factory Log.fromMap(Map<String, dynamic> json) => Log._(
+    json["parentTaskId"],
+    json["id"],
+    json["content"],
+    json["dateTime"],
   );
 
   Map<String, dynamic> toMap() => {
-    "parentTaskId": parentTaskId,
+    "parentTaskId": _parentTaskId,
     "id": id,
     "content": content,
     "dateTime": dateTime,
   };
+
+  int get parentTaskId => _parentTaskId;
+
+  int get id => _id;
 
   String getFormattedDate() {
     var dateFormat = [mm, '/', dd, '/', yyyy];
