@@ -22,6 +22,7 @@ class _LogListState extends State<LogList> {
   @override
   void dispose() {
     alertDialogContentTextController.dispose();
+    super.dispose();
   }
 
   @override
@@ -45,9 +46,12 @@ class _LogListState extends State<LogList> {
               itemBuilder: (context, index) {
                 // List of Logs for a single day
                 List<Log> singleDayLogs = logListByDate[index];
+                // If we're at the last Card widget, we'll set bottomMargin to 8,
+                // since we're only doing top,left,right margins for all other Cards
+                double bottomMargin = index == logListByDate.length - 1? 8.0 : 0.0;
                 // Card Widget to represent a single day's logs, with date in top right
                 return Container(
-                  margin: const EdgeInsets.only(left: 8.0, top: 8.0, right: 8.0),
+                  margin:  EdgeInsets.only(left: 8.0, top: 8.0, right: 8.0, bottom: bottomMargin),
                   child: Card(
                     child: Column(
                       children: <Widget>[
@@ -116,12 +120,15 @@ class _LogListState extends State<LogList> {
 
   _showNewLogDialog(TextEditingController contentTextController,
       TextEditingController timeTextController) async {
+    print("showNewLogDialog has ran");
     await showDialog<String>(
       context: context,
       builder: (context) {
+        print("showDialog builder");
         return LogDialog(widget.parentTask);
       },
     );
+    print("leaving showNewLogDialog");
   }
 
   List<List<Log>> _splitListIntoListByDate(List<Log> logList) {
@@ -238,6 +245,7 @@ class _LogDialogState extends State<LogDialog> {
     if (overrideTime == true) {
       // Only show clock to override time if checkbox is not currently checked
       _showTimePicker(context);
+      print("show time picker has finished");
     } else {
       // If checkbox is unchecked, reset "nowDateTime", which is used to display time (to be logged) inside AlertDialog
       setState(() {
@@ -246,7 +254,7 @@ class _LogDialogState extends State<LogDialog> {
     }
   }
 
-   _showTimePicker(BuildContext context) async {
+   Future<Null> _showTimePicker(BuildContext context) async {
     TimeOfDay pickedTime =
         await showTimePicker(context: context, initialTime: TimeOfDay.now());
     if (pickedTime != null) {
@@ -259,5 +267,6 @@ class _LogDialogState extends State<LogDialog> {
         nowDateTime = newLogTime;
       });
     }
+    return null;
   }
 }
