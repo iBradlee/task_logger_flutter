@@ -1,7 +1,6 @@
 import 'package:date_format/date_format.dart';
 import 'package:flutter/material.dart';
 import 'package:task_logger_flutter/db/database.dart';
-import 'package:task_logger_flutter/globals.dart' as globals;
 import 'package:task_logger_flutter/models/logModel.dart';
 import 'package:task_logger_flutter/models/taskModel.dart';
 
@@ -128,6 +127,8 @@ class _LogListState extends State<LogList> {
         return LogDialog(widget.parentTask);
       },
     );
+    // After dialog is finished, set the state of Log List screen, to update UI
+    setState((){});
     print("leaving showNewLogDialog");
   }
 
@@ -154,6 +155,7 @@ class _LogListState extends State<LogList> {
 
 // Log Dialog class. Is needed so checkbox widget will be updated when setState is called
 class LogDialog extends StatefulWidget {
+
   LogDialog(this.parentTask);
 
   Task parentTask;
@@ -163,6 +165,13 @@ class LogDialog extends StatefulWidget {
 }
 
 class _LogDialogState extends State<LogDialog> {
+
+  // THIS IS OVERRIDDEN FOR TESTING PURPOSES; GET RID OF AFTER
+  @override
+  void setState(VoidCallback fn) {
+    super.setState(fn);
+  }
+
   TextEditingController contentTextController = TextEditingController();
   DateTime nowDateTime = DateTime.now();
   bool overrideTime = false;
@@ -170,7 +179,6 @@ class _LogDialogState extends State<LogDialog> {
 
   @override
   void dispose() {
-    print("_LogDialogState dispose has ran");
     super.dispose();
   }
 
@@ -218,14 +226,12 @@ class _LogDialogState extends State<LogDialog> {
   }
 
   _insertNewLog(TextEditingController textController) {
-    print("insertNewLog has ran");
     if (textController.text.isNotEmpty) {
       Log newLog = Log(textController.text, widget.parentTask.id);
       // Since user can override a Log's time, we'll set the Log's dateTime to whatever the
       // member variable "nowDateTime" is set to (either the current time, or a user-specified time)
       newLog.dateTime = nowDateTime.toString();
       setState(() {
-        print("insertNewLog setState has ran");
         textController.clear();
         DBProvider.db.insertLog(newLog);
       });
@@ -239,34 +245,44 @@ class _LogDialogState extends State<LogDialog> {
   }
 
   _checkboxOnChanged(bool value) {
-    setState(() {
-      overrideTime = value;
-    });
-    if (overrideTime == true) {
+    // If value (overriding Time) is true
+    if (value) {
       // Only show clock to override time if checkbox is not currently checked
       _showTimePicker(context);
-      print("show time picker has finished");
+      // Try setting state here instead, while gett
     } else {
       // If checkbox is unchecked, reset "nowDateTime", which is used to display time (to be logged) inside AlertDialog
       setState(() {
         nowDateTime = DateTime.now();
+        // If value == false, set overrideTime to the same ("value" is value of checkbox for overriding time)
+        overrideTime = false;
       });
     }
   }
 
-   Future<Null> _showTimePicker(BuildContext context) async {
+    _showTimePicker(BuildContext context) async {
     TimeOfDay pickedTime =
         await showTimePicker(context: context, initialTime: TimeOfDay.now());
     if (pickedTime != null) {
       // Merge newly created DateTime with user selected TimeOfDay, to create a custom DateTime obj
-      DateTime newLogTime = DateTime(nowDateTime.year, nowDateTime.month,
+      DateTime overriddenTime = DateTime(nowDateTime.year, nowDateTime.month,
           nowDateTime.day, pickedTime.hour, pickedTime.minute);
-      // Set state to display newly created time inside AlertDialog
-      setState(() {
-        print("showTimePicker setState has been ran");
-        nowDateTime = newLogTime;
-      });
+        // If time selected in TimePicker is the same as current time, don't change anything
+        if (timeHasChanged(overriddenTime)) {
+          setState(() {
+            overrideTime = true;
+            nowDateTime = overriddenTime;
+          });
+        }
     }
-    return null;
   }
+
+  bool timeHasChanged(DateTime overriddenTime) {
+    if (overriddenTime.hour != nowDateTime.hour ||
+        overriddenTime.minute != nowDateTime.minute)
+      return true;
+  }
+
+
+
 }
