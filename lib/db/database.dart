@@ -32,13 +32,16 @@ class DBProvider {
     // Path for storing iOS/Android documents
     Directory documentsDirectory = await getApplicationDocumentsDirectory();
     // Using base document path, amend "TestDB.db" to finish the path the DB will use
+    // TODO Need to change path to actually use the "databases" folder
     String path = join(documentsDirectory.path, "TestDB.db");
-    return await openDatabase(path, version: 2, onOpen: (db) {},
+    return await openDatabase(path, version: 3, onOpen: (db) {},
     onCreate: (Database db, int version) async {
       await db.execute("CREATE TABLE ${TaskDbSchema.TABLE_NAME} ("
         "${TaskDbSchema.COL_ID} INTEGER PRIMARY KEY,"
         "${TaskDbSchema.COL_TITLE} TEXT,"
-        "${TaskDbSchema.COL_LAST_DATETIME} TEXT"
+        "${TaskDbSchema.COL_LAST_DATETIME} TEXT,"
+        "${TaskDbSchema.COL_DELETED} INTEGER NOT NULL DEFAULT 0,"
+        "${TaskDbSchema.COL_DATE_DELETED} TEXT"
         ")");
       await db.execute("CREATE TABLE ${LogDbSchema.TABLE_NAME}("
           "${LogDbSchema.COL_ID} INTEGER PRIMARY KEY,"
@@ -46,6 +49,18 @@ class DBProvider {
           "${LogDbSchema.COL_CONTENT} TEXT,"
           "${LogDbSchema.COL_DATETIME} TEXT"
           ")");
+    },
+    onUpgrade: (db,int oldVersion, int newVersion){
+      // i believe this method is for EVERY migration strategy that you need.
+      // for example, you would check "if oldVersion == 2, and newVersion == 3"
+      // and from there define what changes you want applied to the database when
+      // migrating from version 2 to 3. And then handle every other migration needed
+
+      // Migration starting at 2 -> 3
+      if (oldVersion <= 2) {
+        db.execute(TaskDbMigrations.MIG_2_3_ONE);
+        db.execute(TaskDbMigrations.MIG_2_3_TWO);
+      }
     });
   }
 
@@ -117,11 +132,23 @@ class DBProvider {
 
 }
 
+class TaskDbMigrations {
+  static const String MIG_1_2 = "";
+  static const String MIG_2_3_ONE = "ALTER TABLE ${TaskDbSchema.TABLE_NAME} ADD COLUMN "
+      "${TaskDbSchema.COL_DELETED} INTEGER NOT NULL DEFAULT 0";
+  static const String MIG_2_3_TWO = "ALTER TABLE ${TaskDbSchema.TABLE_NAME} ADD COLUMN ${TaskDbSchema.COL_DATE_DELETED} "
+      "TEXT";
+}
+
 class TaskDbSchema {
   static const String TABLE_NAME = "Task";
   static const String COL_ID = "id";
   static const String COL_TITLE = "title";
   static const String COL_LAST_DATETIME = "lastUpdatedDateTime";
+
+  // Added in db version 3
+  static const String COL_DELETED = "deleted";
+  static const String COL_DATE_DELETED = "dateDeleted";
 }
 
 class LogDbSchema {

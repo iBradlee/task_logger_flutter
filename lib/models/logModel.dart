@@ -6,18 +6,23 @@ class Log {
   String content;
   // When displaying time/date, it can be formatted for UI with helper methods in this class
   String dateTime;
+  int deleted;
+  int dateDeleted;
 
   Log(this.content, this._parentTaskId) {
     dateTime = DateTime.now().toString();
+    deleted = 0;
   }
 
-  Log._(this._parentTaskId, this._id, this.content, this.dateTime);
+  Log._(this._parentTaskId, this._id, this.content, this.dateTime, this.deleted, this.dateDeleted);
 
   factory Log.fromMap(Map<String, dynamic> json) => Log._(
     json["parentTaskId"],
     json["id"],
     json["content"],
     json["dateTime"],
+    json["deleted"],
+    json["dateDeleted"]
   );
 
   Map<String, dynamic> toMap() => {
@@ -25,6 +30,8 @@ class Log {
     "id": id,
     "content": content,
     "dateTime": dateTime,
+    "deleted": deleted,
+    "dateDeleted": dateDeleted
   };
 
   int get parentTaskId => _parentTaskId;
