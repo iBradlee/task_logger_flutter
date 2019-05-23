@@ -5,23 +5,30 @@ class Task {
   String title;
   // When displaying time/date, it can be formatted for UI with helper methods in this class
   String lastUpdatedDateTime;
+  int deleted;
+  String dateTimeDeleted;
 
   Task(this.title) {
     lastUpdatedDateTime = DateTime.now().toString();
+    deleted = 0;
   }
 
-  Task._(this._id, this.title, this.lastUpdatedDateTime);
+  Task._(this._id, this.title, this.lastUpdatedDateTime, this.deleted, this.dateTimeDeleted);
 
   factory Task.fromMap(Map<String, dynamic> json) => Task._(
     json["id"],
     json["title"],
     json["lastUpdatedDateTime"],
+    json["deleted"],
+    json["dateTimeDeleted"]
   );
 
   Map<String, dynamic> toMap() => {
     "id": id,
     "title": title,
     "lastUpdatedDateTime": lastUpdatedDateTime,
+    "deleted": deleted,
+    "dateTimeDeleted": dateTimeDeleted
   };
 
   int get id => _id;

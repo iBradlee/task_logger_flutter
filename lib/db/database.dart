@@ -41,7 +41,7 @@ class DBProvider {
         "${TaskDbSchema.COL_TITLE} TEXT,"
         "${TaskDbSchema.COL_LAST_DATETIME} TEXT,"
         "${TaskDbSchema.COL_DELETED} INTEGER NOT NULL DEFAULT 0,"
-        "${TaskDbSchema.COL_DATE_DELETED} TEXT"
+        "${TaskDbSchema.COL_DATE_TIME_DELETED} TEXT"
         ")");
       await db.execute("CREATE TABLE ${LogDbSchema.TABLE_NAME}("
           "${LogDbSchema.COL_ID} INTEGER PRIMARY KEY,"
@@ -51,15 +51,13 @@ class DBProvider {
           ")");
     },
     onUpgrade: (db,int oldVersion, int newVersion){
-      // i believe this method is for EVERY migration strategy that you need.
-      // for example, you would check "if oldVersion == 2, and newVersion == 3"
-      // and from there define what changes you want applied to the database when
-      // migrating from version 2 to 3. And then handle every other migration needed
-
       // Migration starting at 2 -> 3
       if (oldVersion <= 2) {
         db.execute(TaskDbMigrations.MIG_2_3_ONE);
         db.execute(TaskDbMigrations.MIG_2_3_TWO);
+      }
+      if (oldVersion <= 3) {
+        db.execute(TaskDbMigrations.MIG_3_4);
       }
     });
   }
@@ -74,6 +72,13 @@ class DBProvider {
     final db = await database;
     var result = await db.query(TaskDbSchema.TABLE_NAME);
     // If result (query) isn't empty, convert stored maps to Tasks, and return list; if is empty, return empty list
+    List<Task> taskList = result.isNotEmpty ? result.map((map) => Task.fromMap(map)).toList() : [];
+    return taskList;
+  }
+
+  Future<List<Task>> getAllNotDeletedTasks() async {
+    final db = await database;
+    var result = await db.query(TaskDbSchema.TABLE_NAME, where: "deleted = 0");
     List<Task> taskList = result.isNotEmpty ? result.map((map) => Task.fromMap(map)).toList() : [];
     return taskList;
   }
@@ -133,11 +138,16 @@ class DBProvider {
 }
 
 class TaskDbMigrations {
+  // 1 -> 2
   static const String MIG_1_2 = "";
+  // 2 -> 3
   static const String MIG_2_3_ONE = "ALTER TABLE ${TaskDbSchema.TABLE_NAME} ADD COLUMN "
       "${TaskDbSchema.COL_DELETED} INTEGER NOT NULL DEFAULT 0";
   static const String MIG_2_3_TWO = "ALTER TABLE ${TaskDbSchema.TABLE_NAME} ADD COLUMN ${TaskDbSchema.COL_DATE_DELETED} "
       "TEXT";
+  // 3 -> 4
+  static const String MIG_3_4 = "ALTER TABLE ${TaskDbSchema.TABLE_NAME} RENAME COLUMN "
+      "${TaskDbSchema.COL_DATE_DELETED} TO ${TaskDbSchema.COL_DATE_TIME_DELETED}";
 }
 
 class TaskDbSchema {
@@ -147,8 +157,12 @@ class TaskDbSchema {
   static const String COL_LAST_DATETIME = "lastUpdatedDateTime";
 
   // Added in db version 3
+  //TODO change column name "dateDeleted" to "dateTimeDeleted", as to be more accurate.
   static const String COL_DELETED = "deleted";
-  static const String COL_DATE_DELETED = "dateDeleted";
+  static const String COL_DATE_DELETED = "dateDeleted"; // Outdated column name as of v.4
+
+  // Added in db version 4
+  static const String COL_DATE_TIME_DELETED = "dateTimeDeleted"; // Renamed "dateDeleted" column
 }
 
 class LogDbSchema {
